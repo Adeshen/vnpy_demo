@@ -34,16 +34,16 @@ def connect_in_thread(main_engine: MainEngine):
 
     main_engine.add_gateway(ccxt_gateway.OkxGateway)
 
-    okx = main_engine.get_gateway("OKX")
+    # okx = main_engine.get_gateway("OKX")
 
-    okx.rest_api.connect(
-        okx_setting["API Key"],
-        okx_setting["Secret Key"],
-        okx_setting["Passphrase"],
-        okx_setting["Server"],
-        okx_setting["Proxy Host"],
-        int(okx_setting["Proxy Port"])
-    )
+    # okx.rest_api.connect(
+    #     okx_setting["API Key"],
+    #     okx_setting["Secret Key"],
+    #     okx_setting["Passphrase"],
+    #     okx_setting["Server"],
+    #     okx_setting["Proxy Host"],
+    #     int(okx_setting["Proxy Port"])
+    # )
     # main_engine.connect(
     #     setting=okx_setting,
     #     gateway_name="OKX",
@@ -64,8 +64,7 @@ def query_long_history_to_db(
     # 每个请求的时间间隔
     interval_time = end - start
     
-
-    default_limit = 300
+    default_limit = 10000
     timeframe_map = {
         '1s': 1,
         '1m': 60,
@@ -105,7 +104,7 @@ def main():
 
     event_engine = EventEngine()
     main_engine = MainEngine(event_engine)
-    main_engine.add_gateway(OkxGateway)
+    # main_engine.add_gateway(OkxGateway)
     # connect_thread = threading.Thread(target=connect_in_thread, args=(main_engine,))
     # connect_thread.start()
     connect_in_thread(main_engine)
@@ -115,32 +114,24 @@ def main():
     req = HistoryRequest(
         symbol="BTC-USDT",
         exchange=Exchange.OKX,
-        start=datetime.datetime(2020, 1, 1),
+        start=datetime.datetime(2024, 12, 1),
         end=datetime.datetime(2024, 12, 8),
         interval=Interval.MINUTE
         )
     
     
     sqlite_db = db.get_database()
-    sqlite_db.delete_bar_data("BTC-USDT", Exchange.OKX, Interval.MINUTE)
-    # query_long_history_to_db(
-    #     main_engine=main_engine,
-    #     symbol="BTC-USDT",
-    #     exchange=Exchange.OKX,
-    #     start=datetime.datetime(2020, 1, 1),
-    #     end=datetime.datetime(2024, 12, 8),
-    #     interval=Interval.MINUTE
-    # )
-    
-    bardatas = main_engine.query_history(
-        req=req,
-        gateway_name="CCXT-OKX",
+    # sqlite_db.delete_bar_data("BTC-USDT", Exchange.OKX, Interval.MINUTE)
+    query_long_history_to_db(
+        main_engine=main_engine,
+        symbol="BTC-USDT",
+        exchange=Exchange.OKX,
+        start=datetime.datetime(2024, 1, 1),
+        end=datetime.datetime(2024, 12, 9),
+        interval=Interval.MINUTE
     )
+    
 
-    sqlite_db.save_bar_data(bardatas)
-
-    # main_engine.write_log("bardata", "OKX")
-    # main_engine.write_log(bardatas, "OKX")
     
 if __name__ == "__main__":
     main()

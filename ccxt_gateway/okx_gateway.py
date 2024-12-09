@@ -48,6 +48,9 @@ class OkxGateway(vnpy_okx.OkxGateway):
         "API Key": "",
         "Secret Key": "",
         "Passphrase": "",
+        "Server": ["REAL", "AWS", "DEMO"],
+        "Proxy Host": "",
+        "Proxy Port": "",
     }
 
     def __init__(self, event_engine: EventEngine, gateway_name: str) -> None:
@@ -72,7 +75,7 @@ class OkxGateway(vnpy_okx.OkxGateway):
                       req: HistoryRequest,
                       ):
 
-        default_limit = 1000
+        default_limit = 100
         timeframe_map = {
             '1s': 1,
             '1m': 60,
@@ -81,20 +84,20 @@ class OkxGateway(vnpy_okx.OkxGateway):
             '1d': 86400,
         }
         time_detla = (req.end - req.start)
-        print(time_detla)
         # 获取数据
         request_count = (time_detla.total_seconds()/timeframe_map[req.interval.value]) // default_limit + 1
-
+        print(time_detla.total_seconds())
+        print(request_count)
         history_bars: list[BarData] = []
         exchange = self.ccxt_okx
         for i in range(int(request_count)):
-            print(i," in ", int(request_count))
+            # print(i," in ", int(request_count))
 
             start_time = req.start + datetime.timedelta(seconds=i * default_limit * timeframe_map[req.interval.value])
-            
+
             ohlcvs = exchange.fetch_ohlcv(req.symbol, 
                                          req.interval.value, 
-                                         start_time.timestamp(),
+                                         int(start_time.timestamp())*1000,
                                          limit=default_limit)
             part_bars: list[BarData] = []
             for ohlcv in ohlcvs:
@@ -105,20 +108,21 @@ class OkxGateway(vnpy_okx.OkxGateway):
                     interval=req.interval,
                     datetime=parse_timestamp(ohlcv[0]),
                     open_price=float(ohlcv[1]),
-                    high_price=(ohlcv[2]),
-                    low_price=(ohlcv[3]),
-                    close_price=(ohlcv[4]),
+                    high_price=float(ohlcv[2]),
+                    low_price=float(ohlcv[3]),
+                    close_price=float(ohlcv[4]),
+                    volume=float(ohlcv[5]),
                 )
                 part_bars.append(bar)
-            start_time = part_bars[0].datatime
-            end_time = part_bars[-1].datatime
+            start_time = part_bars[0].datetime
+            end_time = part_bars[-1].datetime
             msg: str = f"Query part kline history finished, {req.symbol} - {req.interval.value}, {start_time} - {end_time}"
             self.write_log(msg)
 
             history_bars.extend(part_bars)
 
-        start_time = history_bars[0].datatime
-        end_time = history_bars[-1].datatime
+        start_time = history_bars[0].datetime
+        end_time = history_bars[-1].datetime
         msg: str = f"Query all kline history finished, {req.symbol} - {req.interval.value}, {start_time} - {end_time}"
         self.write_log(msg)
 
