@@ -1,0 +1,3 @@
+vnpy_novastrategy
+vnpy_binance
+vnpy_duckdb
