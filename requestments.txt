@@ -1,3 +1,6 @@
+vnpy_evo
 vnpy_novastrategy
 vnpy_binance
+vnpy_okx
 vnpy_duckdb
+vnpy-sqlite
