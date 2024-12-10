@@ -97,7 +97,7 @@ def query_long_history_to_db(
             gateway_name="CCXT-OKX",
         )
         sqlite_db.save_bar_data(bardatas)
-
+        time.sleep(1)
 
 def main():
     """主入口函数"""
@@ -111,20 +111,12 @@ def main():
     time.sleep(2)
 
 
-    req = HistoryRequest(
-        symbol="BTC-USDT",
-        exchange=Exchange.OKX,
-        start=datetime.datetime(2024, 12, 1),
-        end=datetime.datetime(2024, 12, 8),
-        interval=Interval.MINUTE
-        )
-    
-    
+
     sqlite_db = db.get_database()
     # sqlite_db.delete_bar_data("BTC-USDT", Exchange.OKX, Interval.MINUTE)
     query_long_history_to_db(
         main_engine=main_engine,
-        symbol="BTC-USDT",
+        symbol="ETH-USDT",
         exchange=Exchange.OKX,
         start=datetime.datetime(2024, 1, 1),
         end=datetime.datetime(2024, 12, 9),
