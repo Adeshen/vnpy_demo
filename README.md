@@ -2,6 +2,25 @@
 
 主要用于熟悉vnpy的各个组件实际使用功能呢。
 
+## usage
+1. 安装依赖
+```
+pip install -r requestments.txt
+```
+
+2. 设置环境python环境库的环境变量
+
+```
+export PYTHONPATH=$(this project path)
+```
+
+3. 获取OKX的api key(自行在okx上申请)。只是下载K线与历史交易数据，无需申请。
+
+```
+export OKX_API_KEY=xxxxxxxxx
+export OKX_SECRET_KEY=xxxxxxxxxx
+export OKX_PASSPHRASE=xxxxx
+```
 
 ## download history data
 
