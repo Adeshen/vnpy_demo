@@ -7,6 +7,7 @@
 ```
 pip install -r requestments.txt
 ```
+注意: ta-lib 可能安装失败，可使用 conda install -c conda-forge ta-lib
 
 2. 设置环境python环境库的环境变量
 

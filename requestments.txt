@@ -4,3 +4,5 @@ vnpy_binance
 vnpy_okx
 vnpy_duckdb
 vnpy-sqlite
+ccxt
+plotly
