@@ -21,8 +21,10 @@ from vnpy_evo.trader.object import (
     PositionData,
     SubscribeRequest,
     TickData,
-    TradeData
 )
+
+from vnpy_sqlite_hft import TradeData
+
 from vnpy_rest import Request, RestClient
 from vnpy_websocket import WebsocketClient
 import vnpy_okx  
@@ -127,3 +129,68 @@ class OkxGateway(vnpy_okx.OkxGateway):
         self.write_log(msg)
 
         return history_bars
+    
+    def query_history_trades(
+        self,
+        req: HistoryRequest,         
+        ):
+        default_limit = 100
+        time_detla = (req.end - req.start)
+        # 获取数据
+        print(time_detla.total_seconds())
+        history_trades: list[TradeData] = []
+        exchange = self.ccxt_okx
+
+        def request_part_trade(symbol:str, type: int, after: int, limit: int):
+            trades = exchange.publicGetMarketHistoryTrades(
+                    {
+                    "instId":symbol, 
+                    "type":type,
+                    "after": after,
+                    "limit":limit}
+                    )["data"]
+            part_trades: list[TradeData] = []
+            # print(trades)
+            for trade in trades:
+                td = TradeData(
+                    gateway_name=self.gateway_name,
+                    symbol=req.symbol,
+                    exchange=Exchange.OKX,
+                    datetime=parse_timestamp(trade["ts"]),
+                    volume=float(trade["sz"]),
+                    price=float(trade["px"]),
+                    side=(trade["side"] == "sell"),
+                    tradeid=trade["tradeId"] ,
+                )
+                part_trades.append(td)
+            return part_trades
+
+        trades = request_part_trade(
+            req.symbol,
+            2,
+            int(req.end.timestamp())*1000,
+            default_limit,
+        )
+        history_trades.extend(trades)
+        while trades[-1].datetime > req.start:
+            # print(start_time, int(start_time.timestamp())*1000)
+            trades = request_part_trade(
+                req.symbol,
+                1,
+                int(trades[-1].tradeid),
+                default_limit,
+            )
+            start_time = trades[0].datetime
+            end_time = trades[-1].datetime
+            
+            history_trades.extend(trades)
+
+            msg: str = f"Query part kline history finished, {req.symbol} - {req.interval.value}, {start_time} - {end_time} - now {len(history_trades)}"
+            self.write_log(msg)
+
+        start_time = history_trades[0].datetime
+        end_time = history_trades[-1].datetime
+        msg: str = f"Query all kline history finished, {req.symbol} - {req.interval.value}, {start_time} - {end_time}"
+        self.write_log(msg)
+
+        return history_trades

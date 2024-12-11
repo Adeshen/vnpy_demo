@@ -37,9 +37,9 @@ class TradeData(BaseData):
     symbol: str
     exchange: Exchange
     tradeid: str
+    side: bool
     datetime: datetime = None
 
-    side: bool
     price: float = 0
     volume: float = 0
 
@@ -100,7 +100,7 @@ class SqliteHFT(vnpy_sqlite.Database):
     def __init__(self) -> None:
         """"""
         super().__init__()
-        self.db.create_tables([DbTradeData])
+        self.db.create_tables([DbTradeData, DbTradeOverview])
 
     def save_trade_data(self, trades: List[TradeData], stream: bool = False):
         """
@@ -120,12 +120,12 @@ class SqliteHFT(vnpy_sqlite.Database):
             d["exchange"] = d["exchange"].value
             d.pop("vt_symbol")
             d.pop("vt_tradeid")
+            d.pop("gateway_name")
             data.append(d)
 
         with self.db.atomic():
             for c in chunked(data, 10):
                 DbTradeData.insert_many(c).on_conflict_replace().execute()
-
 
                 # 更新K线汇总数据
         overview: DbTradeOverview = DbTradeOverview.get_or_none(
