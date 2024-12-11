@@ -33,21 +33,6 @@ def connect_in_thread(main_engine: MainEngine):
     main_engine.write_log("start connect","OKX")
 
     main_engine.add_gateway(ccxt_gateway.OkxGateway)
-
-    # okx = main_engine.get_gateway("OKX")
-
-    # okx.rest_api.connect(
-    #     okx_setting["API Key"],
-    #     okx_setting["Secret Key"],
-    #     okx_setting["Passphrase"],
-    #     okx_setting["Server"],
-    #     okx_setting["Proxy Host"],
-    #     int(okx_setting["Proxy Port"])
-    # )
-    # main_engine.connect(
-    #     setting=okx_setting,
-    #     gateway_name="OKX",
-    # )
     main_engine.write_log("conected ok","OKX")
 
 
@@ -110,10 +95,8 @@ def main():
     connect_in_thread(main_engine)
     time.sleep(2)
 
-
-
-    sqlite_db = db.get_database()
-    # sqlite_db.delete_bar_data("BTC-USDT", Exchange.OKX, Interval.MINUTE)
+    # sqlite_db = db.get_database()
+    # # sqlite_db.delete_bar_data("BTC-USDT", Exchange.OKX, Interval.MINUTE)
     query_long_history_to_db(
         main_engine=main_engine,
         symbol="ETH-USDT",
