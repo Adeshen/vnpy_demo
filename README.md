@@ -33,3 +33,7 @@ export OKX_PASSPHRASE=xxxxx
 2. 历史交易数据下载:
 此外，针对高频场景，额外实现了对接okx的历史交易数据的接口，可以实现下载最近三个月的历史交易数据，同样保存在sqlite数据库中。
 
+## draw analysis
+
+1. 实现绘制历史交易的图表。
+![draw_trade_data](assets/draw_trade_data.png)
