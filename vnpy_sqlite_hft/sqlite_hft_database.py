@@ -16,10 +16,10 @@ from peewee import (
     fn
 )
 
-from vnpy.trader.constant import Exchange, Interval
-from vnpy.trader.object import BaseData, BarData, TickData
-from vnpy.trader.utility import get_file_path
-from vnpy.trader.database import (
+from vnpy_evo.trader.constant import Exchange, Interval
+from vnpy_evo.trader.object import BaseData, BarData, TickData
+from vnpy_evo.trader.utility import get_file_path
+from vnpy_evo.trader.database import (
     BaseDatabase,
     BarOverview,
     DB_TZ,
