@@ -32,6 +32,22 @@ import vnpy_sqlite
 path: str = str(get_file_path("database.db"))
 db: PeeweeSqliteDatabase = PeeweeSqliteDatabase(path)
 
+
+@dataclass
+class OrderBookData(BaseData):
+    symbol: str
+    exchange: Exchange
+    side: bool
+    datetime: datetime = None
+
+    depth: int = 1
+    price: float = 0
+    volume: float = 0
+
+    def __post_init__(self) -> None:
+        """存储在内存的逐笔交易数据"""
+        self.vt_symbol: str = f"{self.symbol}.{self.exchange.value}"
+
 @dataclass
 class TradeData(BaseData):
     symbol: str
@@ -91,6 +107,21 @@ class DbTradeOverview(Model):
         database: PeeweeSqliteDatabase = db
         indexes: tuple = ((("symbol", "exchange"), True),)
 
+@dataclass
+class DbOrderBookData(Model):
+    symbol: str = CharField()
+    exchange: str = CharField()
+    side: bool = BooleanField()
+    datetime: datetime = DateTimeField()
+
+    depth: int = IntegerField()
+    price:  float = FloatField()
+    volume:  float = FloatField()
+
+    class Meta:
+        database: PeeweeSqliteDatabase = db
+        indexes: tuple = ((("symbol", "exchange", "side", "datetime", "depth"), True),)
+
 
 class SqliteHFT(vnpy_sqlite.Database):
     """
@@ -100,7 +131,7 @@ class SqliteHFT(vnpy_sqlite.Database):
     def __init__(self) -> None:
         """"""
         super().__init__()
-        self.db.create_tables([DbTradeData, DbTradeOverview])
+        self.db.create_tables([DbTradeData, DbTradeOverview, DbOrderBookData])
 
     def save_trade_data(self, trades: List[TradeData], stream: bool = False):
         """
@@ -258,3 +289,57 @@ class SqliteHFT(vnpy_sqlite.Database):
             overview.end = end_bar.datetime
 
             overview.save()
+
+    def save_orderbook_data(self, orderbook_data: dict, exchange: str):
+        """
+        orderbook_data: 
+        {'symbol': 'DOGE-USDT', 
+        'bids': [[0.39578, 7889.125795, 0], [0.39576, 1577.357126, 0]], 
+        'asks': [[0.39579, 1179.0, 0], [0.3958, 11436.938987, 0]], 
+        'timestamp': 1734246705057, 
+        'datetime': '2024-12-15T07:11:45.057Z', 'nonce': None}
+        """
+
+        symbol = orderbook_data["symbol"]
+        now = datetime.now()
+        print("now datetime", now.timestamp())
+        print(orderbook_data["timestamp"], " ",float(orderbook_data["timestamp"]))
+
+        date = datetime.fromtimestamp(float(orderbook_data["timestamp"])/1000, DB_TZ)
+        
+        bids = []
+        for i, bid in enumerate(orderbook_data["bids"]):
+            bids.append(
+                {
+                    "symbol": symbol,
+                    "datetime": date,
+                    "exchange": exchange,
+                    "depth": i + 1,
+                    "price": bid[0], 
+                    "volume": bid[1], 
+                    "side": 0, 
+                }
+            )
+        with self.db.atomic():
+            for c in chunked(bids, 100):
+                DbOrderBookData.insert_many(c).on_conflict_replace().execute()
+        del bids
+        
+        asks = []
+
+        for i, ask in enumerate(reversed(orderbook_data["asks"])):
+            asks.append(
+                {
+                    "symbol": symbol,
+                    "datetime": date,
+                    "exchange": exchange,
+                    "depth": i + 1,
+                    "price": ask[0], 
+                    "volume": ask[1], 
+                    "side": 1, 
+                }
+            )
+        with self.db.atomic():
+            for c in chunked(asks, 100):
+                DbOrderBookData.insert_many(c).on_conflict_replace().execute()
+        del asks

@@ -194,3 +194,8 @@ class OkxGateway(vnpy_okx.OkxGateway):
         self.write_log(msg)
 
         return history_trades
+
+    def query_order_book(self, symbol: str, limit=100):
+        order_book = self.ccxt_okx.fetch_order_book(symbol, limit=100)
+
+        return order_book
