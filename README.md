@@ -36,6 +36,9 @@ export OKX_PASSPHRASE=xxxxx
 3. 实时orderbook数据下载：
 提供了http接口，与websocket接口。okx的websocket普通vip大概速度是推送一次/100ms。
 
+4. 实时tick数据下载：
+提供了websocket接口。将orderbook数据和ticker market数据整合到一个tickdata当中，并存储到sqlite数据库中。
+
 ## draw analysis
 
 1. 实现绘制历史交易的图表。

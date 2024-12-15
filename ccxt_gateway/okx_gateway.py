@@ -31,9 +31,10 @@ import vnpy_okx
 
 import ccxt
 import ccxt.pro as ccxtpro
-
+from .utils import parse_tick_data  
 
 import datetime
+import asyncio
 
 def parse_timestamp(timestamp) -> datetime.datetime:
     """Parse timestamp to datetime"""
@@ -213,3 +214,17 @@ class OkxGateway(vnpy_okx.OkxGateway):
 
     async def subscribe_orderbook(self, symbol, limit=100):
         return await self.pro_okx.watch_order_book_for_symbols([symbol], limit=limit)
+    
+    async def subscribe_ticker(self, symbol):
+        return await self.pro_okx.watch_ticker(symbol)
+    
+    async def subscribe_ticker_depth(self, symbol) -> TickData:
+        await self.pro_okx.load_markets()
+        
+        order_book_task = self.subscribe_orderbook("DOGE-USDT", limit=5)
+        ticker_task = self.subscribe_ticker("DOGE-USDT")
+
+        order_book, ticker = await asyncio.gather(order_book_task, ticker_task)
+        tickdata = parse_tick_data(order_book, ticker, self.exchanges[0], self.gateway_name)
+
+        return tickdata
