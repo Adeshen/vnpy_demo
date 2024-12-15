@@ -12,7 +12,7 @@ import os
 import threading
 import time
 import ccxt_gateway 
-
+from asyncio import run
 
 setting.SETTINGS["database.name"] = "sqlite_hft"
 setting.SETTINGS["database.database"] = "database.db"
@@ -36,7 +36,7 @@ def connect_ccxt(main_engine: MainEngine):
     main_engine.write_log("conected ok","OKX")
 
 
-def main():
+async def main():
     """主入口函数"""
 
     event_engine = EventEngine()
@@ -50,5 +50,13 @@ def main():
     # print(order_book)
     hft_db = db.get_database()
     hft_db.save_orderbook_data(order_book, "OKX")
+
+    while True:
+        order_book = await ccxt_okx.subscribe_orderbook("DOGE-USDT", limit=5)
+        # print(book.datetime)
+        # print(book.timestamp)
+        print(order_book)
+        print("\n\n\n")
+        hft_db.save_orderbook_data(order_book, "OKX")
 if __name__ == "__main__":
-    main()
+    run(main())

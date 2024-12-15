@@ -33,6 +33,9 @@ export OKX_PASSPHRASE=xxxxx
 2. 历史交易数据下载:
 此外，针对高频场景，额外实现了对接okx的历史交易数据的接口，可以实现下载最近三个月的历史交易数据，同样保存在sqlite数据库中。
 
+3. 实时orderbook数据下载：
+提供了http接口，与websocket接口。okx的websocket普通vip大概速度是推送一次/100ms。
+
 ## draw analysis
 
 1. 实现绘制历史交易的图表。

@@ -30,6 +30,9 @@ from vnpy_websocket import WebsocketClient
 import vnpy_okx  
 
 import ccxt
+import ccxt.pro as ccxtpro
+
+
 import datetime
 
 def parse_timestamp(timestamp) -> datetime.datetime:
@@ -65,6 +68,14 @@ class OkxGateway(vnpy_okx.OkxGateway):
         super().__init__(event_engine, gateway_name)
 
         self.ccxt_okx = ccxt.okx(
+            {
+                "apiKey": self.default_setting["API Key"],
+                "secret": self.default_setting["Secret Key"],
+                "password": self.default_setting["Passphrase"],
+                # "options": {'defaultType': 'futures'}
+            }
+        )
+        self.pro_okx = ccxtpro.okx(
             {
                 "apiKey": self.default_setting["API Key"],
                 "secret": self.default_setting["Secret Key"],
@@ -199,3 +210,6 @@ class OkxGateway(vnpy_okx.OkxGateway):
         order_book = self.ccxt_okx.fetch_order_book(symbol, limit=100)
 
         return order_book
+
+    async def subscribe_orderbook(self, symbol, limit=100):
+        return await self.pro_okx.watch_order_book_for_symbols([symbol], limit=limit)

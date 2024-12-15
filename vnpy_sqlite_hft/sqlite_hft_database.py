@@ -343,3 +343,17 @@ class SqliteHFT(vnpy_sqlite.Database):
             for c in chunked(asks, 100):
                 DbOrderBookData.insert_many(c).on_conflict_replace().execute()
         del asks
+
+    def delete_orderbook_data(
+        self, 
+        symbol: str,
+        exchange: Exchange,
+    ) -> int:
+        """删除K线数据"""
+        d: ModelDelete = DbOrderBookData.delete().where(
+            (DbOrderBookData.symbol == symbol)
+            & (DbOrderBookData.exchange == exchange.value)
+        )
+        count: int = d.execute()
+        
+        return count
