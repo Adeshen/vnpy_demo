@@ -14,7 +14,7 @@ import time
 import ccxt_gateway 
 from asyncio import run
 import asyncio
-
+import ccxt
 setting.SETTINGS["database.name"] = "sqlite_hft"
 setting.SETTINGS["database.database"] = "database.db"
 
@@ -44,14 +44,20 @@ class TickDownloader:
     async def save_tick_data(self):
         # 后台任务负责异步保存数据
         while True:
-            # 等待队列中有数据
-            tick_datas = await self.tick_data_queue.get()
-            if tick_datas:
-                # 保存数据到数据库
-                self.hft_db.save_tick_data(tick_datas)
-                print(f"Saved {len(tick_datas)} tick data.")
-                # 清空队列
-                self.tick_data_queue.task_done()
+            try:
+                # 等待队列中有数据
+                tick_datas = await self.tick_data_queue.get()
+                if tick_datas:
+                     
+                    # 保存数据到数据库
+                    self.hft_db.save_tick_data(tick_datas)
+                    self.gateway.write_log(f"Saved {len(tick_datas)} tick data.")
+                    # 清空队列
+                    self.tick_data_queue.task_done()
+            except Exception as e:
+                print(e)
+                time.sleep(10)
+                continue
 
     async def down_save_ticker_depth(self, symbol):
         # 创建后台保存任务
@@ -59,16 +65,21 @@ class TickDownloader:
 
         tick_datas = []
         while True:
-            tick_data = await self.gateway.subscribe_ticker_depth(symbol)
-            tick_datas.append(tick_data)
+            try:
+                tick_data = await self.gateway.subscribe_ticker_depth(symbol)
+                tick_datas.append(tick_data)
 
-            # 如果队列中数据超过100个，进行保存操作
-            if len(tick_datas) > 100:
-                # 将数据放入队列进行保存
-                await self.tick_data_queue.put(tick_datas)
-                tick_datas = []  # 清空本次的 tick_data 数据
-
+                # 如果队列中数据超过100个，进行保存操作
+                if len(tick_datas) > 100:
+                    # 将数据放入队列进行保存
+                    await self.tick_data_queue.put(tick_datas)
+                    tick_datas = []  # 清空本次的 tick_data 数据
             # 返回当前的 tick_data
+            except Exception as e:
+                print(e)
+                time.sleep(10)
+                continue
+            
         
         
 
