@@ -51,7 +51,7 @@ class TickDownloader:
                 self.hft_db.save_tick_data(tick_datas)
                 print(f"Saved {len(tick_datas)} tick data.")
                 # 清空队列
-                # self.tick_data_queue.task_done()
+                self.tick_data_queue.task_done()
 
     async def down_save_ticker_depth(self, symbol):
         # 创建后台保存任务
