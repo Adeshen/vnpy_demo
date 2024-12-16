@@ -20,6 +20,7 @@ from vnpy_evo.trader.constant import (
     Status
 )
 import datetime
+import pandas as pd
 
 def parse_tick_data(json_data_bid_ask: dict, json_data_market: dict, exchange: Exchange, gateway_name:str) -> TickData:
     # 从第一个 JSON 提取数据（bids, asks, timestamp, datetime）
@@ -102,3 +103,50 @@ def parse_tick_data(json_data_bid_ask: dict, json_data_market: dict, exchange: E
     )
 
     return tick_data
+
+def convert_tickdata_to_dataframe(
+        tick_data_list: list[TickData],
+    )-> pd.DataFrame:
+    data = []
+    for tick in tick_data_list:
+        row = {
+            'symbol': tick.symbol,
+            'exchange': tick.exchange,
+            'datetime': tick.datetime,
+            'name': tick.name,
+            'volume': tick.volume,
+            'turnover': tick.turnover,
+            'open_interest': tick.open_interest,
+            'last_price': tick.last_price,
+            'last_volume': tick.last_volume,
+            'limit_up': tick.limit_up,
+            'limit_down': tick.limit_down,
+            'open_price': tick.open_price,
+            'high_price': tick.high_price,
+            'low_price': tick.low_price,
+            'pre_close': tick.pre_close,
+            'bid_price_1': tick.bid_price_1,
+            'bid_price_2': tick.bid_price_2,
+            'bid_price_3': tick.bid_price_3,
+            'bid_price_4': tick.bid_price_4,
+            'bid_price_5': tick.bid_price_5,
+            'ask_price_1': tick.ask_price_1,
+            'ask_price_2': tick.ask_price_2,
+            'ask_price_3': tick.ask_price_3,
+            'ask_price_4': tick.ask_price_4,
+            'ask_price_5': tick.ask_price_5,
+            'bid_volume_1': tick.bid_volume_1,
+            'bid_volume_2': tick.bid_volume_2,
+            'bid_volume_3': tick.bid_volume_3,
+            'bid_volume_4': tick.bid_volume_4,
+            'bid_volume_5': tick.bid_volume_5,
+            'ask_volume_1': tick.ask_volume_1,
+            'ask_volume_2': tick.ask_volume_2,
+            'ask_volume_3': tick.ask_volume_3,
+            'ask_volume_4': tick.ask_volume_4,
+            'ask_volume_5': tick.ask_volume_5,
+            'localtime': tick.localtime
+        }
+        data.append(row)
+    
+    return pd.DataFrame(data)
