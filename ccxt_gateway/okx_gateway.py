@@ -128,6 +128,8 @@ class OkxGateway(vnpy_okx.OkxGateway):
                     volume=float(ohlcv[5]),
                 )
                 part_bars.append(bar)
+            if len(part_bars) == 0:
+                continue
             start_time = part_bars[0].datetime
             end_time = part_bars[-1].datetime
             msg: str = f"Query part kline history finished, {req.symbol} - {req.interval.value}, {start_time} - {end_time}"
