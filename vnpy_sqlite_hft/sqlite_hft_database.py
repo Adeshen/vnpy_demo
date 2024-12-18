@@ -192,10 +192,10 @@ class SqliteHFT(vnpy_sqlite.Database):
         Load trade data.
         """
         query: ModelSelect = DbTradeData.select().where(
-            DbTradeData.symbol == symbol
-            & DbTradeData.exchange == exchange.value
-            & DbTradeData.datetime >= start
-            & DbTradeData.datetime <= end
+            (DbTradeData.symbol == symbol)
+            & (DbTradeData.exchange == exchange.value)
+            & (DbTradeData.datetime >= start)
+            & (DbTradeData.datetime <= end)
         )
 
         trades: List[TradeData] = []
