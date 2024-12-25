@@ -1,11 +1,11 @@
 import  vnpy_evo.trader.database  as db
 import vnpy_evo.trader.setting as setting
-from vnpy_evo.trader.constant import Exchange, Interval
-from vnpy_evo.trader.object import TickData
+from vnpy_evo.trader.constant import Exchange, Interval, Direction
+from vnpy_evo.trader.object import TickData, BarData
 
 from  vnpy_evo.trader.engine import MainEngine
 from vnpy_sqlite_hft import TradeData
-
+import plotly.graph_objects as go
 import datetime
 setting.SETTINGS["database.name"] = "sqlite_hft"
 setting.SETTINGS["database.database"] = "database.db"
@@ -85,6 +85,112 @@ def draw_ticker_scatter(
                      hover_name='volume')  # 鼠标悬停显示size信息
 
     fig.show()
+
+def draw_trade_and_bar_scatter(
+        bars: list[BarData],
+        trades: list[TradeData]
+    ):
+    # 处理BarData，转换为适合绘图的数据格式
+    trade_min_time = min([trade.datetime for trade in trades])
+    trade_max_time = max([trade.datetime for trade in trades])
+    print(f"TradeData 最早时间: {trade_min_time}, 最晚时间: {trade_max_time}")
+
+    # 处理BarData，过滤出时间在 TradeData 范围内的Bar
+    bar_data = []
+    for bar in bars:
+        if trade_min_time <= bar.datetime <= trade_max_time:
+            bar_data.append({
+                'datetime': bar.datetime,
+                'open': bar.open_price, 
+                'high': bar.high_price, 
+                'low': bar.low_price,
+                'close': bar.close_price,  # 使用 'close' 作为价格
+                'volume': bar.volume
+            })
+    df_bars = pd.DataFrame(bar_data)
+
+    # 找到最早和最晚的时间
+    bar_min_time = df_bars['datetime'].min()
+    bar_max_time = df_bars['datetime'].max()
+    print(f"BarData 最早时间: {bar_min_time}, 最晚时间: {bar_max_time}")
+
+    # 处理TradeData，过滤出时间在 BarData 范围内的交易
+    trade_data_long = []  # 存储 Long 交易
+    trade_data_short = []  # 存储 Short 交易
+    for trade in trades:
+        if bar_min_time <= trade.datetime <= bar_max_time:
+            trade_info = {
+                'datetime': trade.datetime,
+                'price': trade.price,
+                'volume': trade.volume
+            }
+            if trade.direction == Direction.LONG:
+                trade_data_long.append(trade_info)
+            elif trade.direction == Direction.SHORT:
+                trade_data_short.append(trade_info)
+    print(f"trade 交易时间：long({len(trade_data_long)}) short({len(trade_data_short)}) ")
+    df_trades_long = pd.DataFrame(trade_data_long)
+    df_trades_short = pd.DataFrame(trade_data_short)
+
+    # 创建价格的折线图
+    price_trace = go.Scatter(
+        x=df_bars['datetime'],
+        y=df_bars['close'],
+        mode='lines',
+        name='Price',
+        line=dict(color='royalblue')
+    )
+
+    # 创建交易量的条形图
+    volume_trace = go.Bar(
+        x=df_bars['datetime'],
+        y=df_bars['volume'],
+        name='Volume',
+        marker=dict(color='orange'),
+        yaxis='y2'  # 绑定到第二个 y 轴
+    )
+
+    # 创建 Long 交易数据的散点图
+    trade_trace_long = go.Scatter(
+        x=df_trades_long['datetime'],
+        y=df_trades_long['price'],
+        mode='markers',
+        name='Long Trade',
+        marker=dict(color='green', size=10, symbol='triangle-up')
+    )
+
+    # 创建 Short 交易数据的散点图
+    trade_trace_short = go.Scatter(
+        x=df_trades_short['datetime'],
+        y=df_trades_short['price'],
+        mode='markers',
+        name='Short Trade',
+        marker=dict(color='red', size=10, symbol='triangle-down')
+    )
+
+    # 创建布局，设置双Y轴
+    layout = go.Layout(
+        title='Price, Volume and Trades Over Time',
+        xaxis=dict(title='Datetime'),
+        yaxis=dict(
+            title='Price',
+            side='left',
+            showgrid=False
+        ),
+        yaxis2=dict(
+            title='Volume',
+            side='right',
+            overlaying='y',  # 与左边的y轴重叠
+            showgrid=False
+        ),
+        barmode='stack',  # 条形图的叠加方式
+        hovermode='x unified'  # 鼠标悬停时显示统一信息
+    )
+
+    # 创建图形并显示
+    fig = go.Figure(data=[price_trace, trade_trace_long, trade_trace_short], layout=layout)
+    fig.show()
+
 
 def main():
     sqlite_db = db.get_database()
