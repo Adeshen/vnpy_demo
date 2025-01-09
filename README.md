@@ -39,6 +39,11 @@ export OKX_PASSPHRASE=xxxxx
 4. 实时tick数据下载：
 提供了websocket接口。将orderbook数据和ticker market数据整合到一个tickdata当中，并存储到sqlite数据库中。
 
+5. dolphindb 测试：
+同样查询400条数据
+dolphindb 只需要1.133秒，
+而 sqlitedb 需要 几分钟，差距数百倍，决定后续弃用sqlite
+
 ## draw analysis
 
 1. 实现绘制历史交易的图表。
