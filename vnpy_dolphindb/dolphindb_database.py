@@ -559,6 +559,18 @@ class DolphindbDatabase(BaseDatabase):
         appender = ddb.PartitionedTableAppender(self.db_path, "trade", "datetime", self.pool)
         appender.append(df)
 
+    def save_trade_data_df(self, df):
+        # 将 TradeData 转换为 DataFrame
+        df['datetime'] = df['datetime'].apply(lambda x: np.datetime64(convert_tz(datetime.fromtimestamp(x/1000))))
+        # print(df.head())
+        # raise Exception("not implemented")
+        gc.collect()
+        # 插入数据到 DolphinDB
+        # print(self.db_path, "trade", "datetime", self.pool)
+        appender = ddb.PartitionedTableAppender(self.db_path, "trade", "datetime", self.pool)
+        appender.append(df)
+
+
     def load_trade_data(self, symbol, exchange, start: datetime, end: datetime):
         table = self.session.loadTable(tableName="trade", dbPath=self.db_path)
         # start = np.datetime64(convert_tz(start))
