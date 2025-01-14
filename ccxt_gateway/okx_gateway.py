@@ -132,8 +132,8 @@ class OkxGateway(vnpy_okx.OkxGateway):
                 continue
             start_time = part_bars[0].datetime
             end_time = part_bars[-1].datetime
-            msg: str = f"Query part kline history finished, {req.symbol} - {req.interval.value}, {start_time} - {end_time}"
-            self.write_log(msg)
+            # msg: str = f"Query part kline history finished, {req.symbol} - {req.interval.value}, {start_time} - {end_time}"
+            # self.write_log(msg)
 
             history_bars.extend(part_bars)
 
@@ -148,7 +148,7 @@ class OkxGateway(vnpy_okx.OkxGateway):
         self,
         req: HistoryRequest,         
         ):
-        default_limit = 100
+        default_limit = 200
         time_detla = (req.end - req.start)
         # 获取数据
         print(time_detla.total_seconds())
@@ -199,12 +199,12 @@ class OkxGateway(vnpy_okx.OkxGateway):
             
             history_trades.extend(trades)
 
-            msg: str = f"Query part kline history finished, {req.symbol} - {req.interval.value}, {start_time} - {end_time} - now {len(history_trades)}"
-            self.write_log(msg)
+            # msg: str = f"Query part kline history finished, {req.symbol} - {req.interval.value}, {start_time} - {end_time} - now {len(history_trades)}"
+            # self.write_log(msg)
 
         start_time = history_trades[0].datetime
         end_time = history_trades[-1].datetime
-        msg: str = f"Query all kline history finished, {req.symbol} - {req.interval.value}, {start_time} - {end_time}"
+        msg: str = f"Query all trade history finished, {req.symbol} - {req.interval.value}, {start_time} - {end_time}"
         self.write_log(msg)
 
         return history_trades
