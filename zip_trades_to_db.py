@@ -28,6 +28,7 @@ zip_dir = "./history_data"  # 当前目录，可以根据需要修改
 zip_files = [f for f in os.listdir(zip_dir) if f.endswith('.zip')]
 pattern = r"([A-Z]+-[A-Z]+(-SWAP)?)(?=-trades)"
 
+
 # 遍历每个 zip 文件
 for zip_file in zip_files:
     # 构建完整的文件路径
@@ -50,7 +51,7 @@ for zip_file in zip_files:
         csv_path = os.path.join(zip_dir, csv_file)
         print(csv_path)
         df = pd.read_csv(csv_path, encoding='latin1')
-        df.columns=['tradeid', 'side', 'price', 'volume' , 'datetime']
+        df.columns=['tradeid', 'side', 'volume' , 'price', 'datetime']
         df['side'] = df['side'] == 'sell'
         df['symbol'] = symbol
         df['exchange'] = "OKX"
