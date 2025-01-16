@@ -14,8 +14,8 @@ import time
 import ccxt_gateway 
 
 
-setting.SETTINGS["database.name"] = "sqlite_hft"
-setting.SETTINGS["database.database"] = "database.db"
+# setting.SETTINGS["database.name"] = "sqlite_hft"
+# setting.SETTINGS["database.database"] = "database.db"
 
 
 def connect_ccxt(main_engine: MainEngine):
@@ -43,24 +43,28 @@ def split_download(req: HistoryRequest, data_gateway):
     start_time = req.start
     end_time = req.end
     # 时间间隔设置为1小时
-    time_delta = datetime.timedelta(hours=1)
+    time_delta = datetime.timedelta(minutes=5)
     current_time = start_time
     while current_time < end_time:
         # 构建每批次的请求范围
-        batch_req = HistoryRequest(
-            symbol=req.symbol,
-            exchange=req.exchange,
-            start=current_time,
-            end=min(current_time + time_delta, end_time),  # 避免超出结束时间
-            interval=req.interval
-        )
-        trade_data = data_gateway.query_history_trades(batch_req)
-            # 将获取到的交易数据保存到数据库中
-        sqlite_db.save_trade_data(trade_data)
-        current_time += time_delta
+        try:
+            batch_req = HistoryRequest(
+                symbol=req.symbol,
+                exchange=req.exchange,
+                start=current_time,
+                end=min(current_time + time_delta, end_time),  # 避免超出结束时间
+                interval=req.interval
+            )
+            trade_data = data_gateway.query_history_trades(batch_req)
+                # 将获取到的交易数据保存到数据库中
+            sqlite_db.save_trade_data(trade_data)
+            current_time += time_delta
+        except Exception as e:
+            data_gateway.write_log(e)
+            continue
         # print(trade_data)
         # print(trade_data)
-    data_gateway.write_log("downloaded data", "OKX", )
+    data_gateway.write_log("downloaded data OKX finish ")
 def main():
     """主入口函数"""
 
@@ -72,11 +76,11 @@ def main():
     ccxt_okx = main_engine.get_gateway("CCXT-OKX")
 
     req = HistoryRequest(
-        symbol="DOGE-USDT",
+        symbol="DOGE-USDT-SWAP",
         exchange=Exchange.OKX,
-        start=datetime.datetime(2024, 12, 8),
-        end=datetime.datetime(2024, 12, 9),
-        interval=Interval.MINUTE
+        start=datetime.datetime(2024, 12, 1),
+        end=datetime.datetime(2024, 12, 15),
+        interval=Interval.SECOND
     )
     # trade_data = ccxt_okx.query_history_trades(
     #     req
