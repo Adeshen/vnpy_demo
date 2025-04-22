@@ -48,7 +48,6 @@ for pair in pair_dirs:
                 # df['side'] = df['side'] == 'sell'
                 # df['symbol'] = symbol
                 # df['exchange'] = "OKX"
-                df['datetime'] = pd.to_datetime(df['datetime'])
                 df = df[["tradeid",  "side", "datetime", "price", "volume"]]
                 # print(df)
 
