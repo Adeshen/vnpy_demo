@@ -71,19 +71,19 @@ def download_trade_data(
 # 定义下载参数
 # trade_pairs = ["BTC-USDT", "ETH-USDT"]
 # OKX高流动性交易对列表（2024年更新）
-top_50_pairs = [
+top_pairs = [
     "BTC-USDT", "ETH-USDT", "XRP-USDT", "DOGE-USDT", "ADA-USDT",
     "SOL-USDT", "DOT-USDT", "AVAX-USDT", "LINK-USDT", "LTC-USDT",
     "BCH-USDT", "TRX-USDT", "UNI-USDT", "MATIC-USDT", "ETC-USDT",
     "EOS-USDT", "XLM-USDT", "ALGO-USDT", "FIL-USDT", "AAVE-USDT",
     "ATOM-USDT", "XTZ-USDT", "MANA-USDT", "SAND-USDT", "AXS-USDT",
     "DYDX-USDT", "GRT-USDT", "1INCH-USDT", "ENJ-USDT", "ZEC-USDT",
-    "XMR-USDT", "DASH-USDT", "COMP-USDT", "YFI-USDT", "CRV-USDT",
+    "XMR-USDT", "COMP-USDT", "YFI-USDT", "CRV-USDT",
     "SNX-USDT", "MKR-USDT", "FTT-USDT", "SRM-USDT", "RAY-USDT",
     "KNC-USDT", "BAL-USDT", "UMA-USDT", "BNT-USDT", "REN-USDT",
     "OXT-USDT", "NMR-USDT", "LRC-USDT", "ZRX-USDT", "SUSHI-USDT"
 ]
-trade_pairs = top_50_pairs
+trade_pairs = top_pairs
 
 start_date = date(2024, 12, 1)
 end_date = date(2025, 4, 22)

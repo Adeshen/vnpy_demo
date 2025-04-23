@@ -34,8 +34,7 @@ def read_feather_data(symbol: str, start_time: str, end_time: str, base_dir: str
         raise FileNotFoundError(f"交易对目录不存在: {pair_dir}")
     
     # 收集符合条件的文件
-    data_frames = []
-    combined_df = pd.DataFrame()
+    combined_df = None
     # date_pattern = re.compile(rf"{re.escape(symbol)}-trades-(\d{{4}}-\d{{2}}-\d{{2}})\.feather")
     for date in pd.date_range(start=start_date, end=end_date):
         date_str = date.strftime("%Y-%m-%d")
@@ -45,10 +44,16 @@ def read_feather_data(symbol: str, start_time: str, end_time: str, base_dir: str
         if os.path.exists(file_path):
             df = feather.read_feather(file_path)
             # data_frames.append(df)
-            combined_df = pd.concat([combined_df, df], ignore_index=True)
+            if combined_df is None:
+                combined_df = df
+            else:
+                combined_df = pd.concat([combined_df, df], ignore_index=True)
             print(f"读取文件: {file_path}, 日期: {date_str}")
             # print(df)
     
+    if combined_df is None:
+        # raise FileNotFoundError(f"没有找到符合条件的文件: {symbol} 从 {start_date} 到 {end_date}")
+        return pd.DataFrame()
     # 确保时间列正确排序
     combined_df['datetime'] = pd.to_datetime(combined_df['datetime'], unit='ms')
     # combined_df = combined_df.sort_values(by='datetime')
@@ -56,6 +61,11 @@ def read_feather_data(symbol: str, start_time: str, end_time: str, base_dir: str
     return combined_df
 
 def check_missing_minutes(ohlcv_df, freq='1min'):
+
+    if ohlcv_df.empty:
+        print("数据为空，无法检查缺失的分钟")
+        return []
+
     # 1. 生成完整的分钟级时间范围
     full_time_range = pd.date_range(
         start=ohlcv_df.index.min(),
@@ -72,14 +82,26 @@ def check_missing_minutes(ohlcv_df, freq='1min'):
     return missing_minutes
 
 
-if __name__ == "__main__":
-    # 使用示例：
+def merge_ohlcv_data(start_time, end_time, symbol, freq='1min'):
+    """
+    合并多个OHLCV数据
+    
+    参数:
+    ohlcv_list (list): 包含多个OHLCV数据的列表
+    
+    返回:
+    pd.DataFrame: 合并后的OHLCV数据
+    """
     count = 0
     ohlcvs = pd.DataFrame()
-    freq = '1min'
-    symbol = "BTC-USDT"
-    start_time = "2024-12-01"
-    end_time = "2025-04-22"
+    ohlc_path = f"{freq}_{start_time}_{end_time}"
+    os.makedirs(ohlc_path, exist_ok=True)
+    file_path = f"{ohlc_path}/{symbol}_{freq}_{start_time}_{end_time}.feather"
+
+    if os.path.exists(file_path):
+        print(f"文件已存在: {file_path}")
+        return feather.read_feather(file_path)
+
     try:
         for date in pd.date_range(start=start_time, end=end_time, freq="2D"):
             print(date)
@@ -87,6 +109,7 @@ if __name__ == "__main__":
                 symbol=symbol,
                 start_time=date,
                 end_time=date+pd.DateOffset(days=1),
+                base_dir="./okx_feather_data"
             )
             count += len(df)
             # pandas 合并bar
@@ -106,14 +129,14 @@ if __name__ == "__main__":
             )
             ohlcvs = pd.concat([ohlcvs, ohlcv], ignore_index=False)
 
-            print(ohlcv)
+            # print(ohlcv)
 
     except Exception as e:
         print(f"读取失败: {str(e)}")
+        # raise e
     print(f"总共读取到 {count} 条记录")
 
 
-    file_path = f"{symbol}_{freq}_{start_time}_{end_time}.feather"
     feather.write_feather(ohlcvs, file_path)
     print(f"保存到 {file_path} ")
 
@@ -123,3 +146,25 @@ if __name__ == "__main__":
     missing_minutes = check_missing_minutes(ohlcvs)
 
     print("缺失的分钟:", missing_minutes)
+
+    return ohlcvs
+
+if __name__ == "__main__":
+    # 使用示例：
+
+    
+    freq = '1min'
+    # symbol = "BTC-USDT"
+    start_time = "2024-12-01"
+    end_time = "2025-04-22"
+
+
+    print(feather.read_feather(r"F:\quant\vnpy_demo\okx_feather_data\INCH-USDT\INCH-USDT-trades-2024-12-01.feather"))
+    for symbol in os.listdir("./okx_feather_data"):
+
+        ohlc = merge_ohlcv_data(
+            start_time=start_time,
+            end_time=end_time,
+            symbol=symbol,
+            freq=freq
+        )
