@@ -3,6 +3,8 @@ import pandas as pd
 import re
 from datetime import datetime
 import pyarrow.feather as feather
+from functools import partial
+from concurrent.futures import ProcessPoolExecutor
 
 def read_feather_data(symbol: str, start_time: str, end_time: str, base_dir: str = "./okx_feather_data"):
     """
@@ -82,7 +84,7 @@ def check_missing_minutes(ohlcv_df, freq='1min'):
     return missing_minutes
 
 
-def merge_ohlcv_data(start_time, end_time, symbol, freq='1min'):
+def merge_ohlcv_data(start_time, end_time, symbol, freq='1min', file_format='feather'):
     """
     合并多个OHLCV数据
     
@@ -96,7 +98,7 @@ def merge_ohlcv_data(start_time, end_time, symbol, freq='1min'):
     ohlcvs = pd.DataFrame()
     ohlc_path = f"{freq}_{start_time}_{end_time}"
     os.makedirs(ohlc_path, exist_ok=True)
-    file_path = f"{ohlc_path}/{symbol}_{freq}_{start_time}_{end_time}.feather"
+    file_path = f"{ohlc_path}/{symbol}_{freq}_{start_time}_{end_time}.{file_format}"
 
     if os.path.exists(file_path):
         print(f"文件已存在: {file_path}")
@@ -136,8 +138,11 @@ def merge_ohlcv_data(start_time, end_time, symbol, freq='1min'):
         # raise e
     print(f"总共读取到 {count} 条记录")
 
-
-    feather.write_feather(ohlcvs, file_path)
+    if file_format == "feather":
+        feather.write_feather(ohlcvs, file_path)
+    else:
+        ohlcvs.to_csv(file_path)
+    
     print(f"保存到 {file_path} ")
 
     # ohlcvs = feather.read_feather(file_path)
@@ -159,12 +164,32 @@ if __name__ == "__main__":
     end_time = "2025-04-22"
 
 
-    print(feather.read_feather(r"F:\quant\vnpy_demo\okx_feather_data\INCH-USDT\INCH-USDT-trades-2024-12-01.feather"))
-    for symbol in os.listdir("./okx_feather_data"):
+    # print(feather.read_feather(r"F:\quant\vnpy_demo\okx_feather_data\INCH-USDT\INCH-USDT-trades-2024-12-01.feather"))
+    # for symbol in os.listdir("./okx_feather_data"):
 
-        ohlc = merge_ohlcv_data(
-            start_time=start_time,
-            end_time=end_time,
-            symbol=symbol,
-            freq=freq
-        )
+    #     ohlc = merge_ohlcv_data(
+    #         start_time=start_time,
+    #         end_time=end_time,
+    #         symbol=symbol,
+    #         freq=freq,
+    #         file_format="csv"
+    #     )
+
+        # 构造参数
+    symbols = os.listdir("./okx_feather_data")
+
+    # 使用 partial 固定除 symbol 之外的参数
+    process_func = partial(
+        merge_ohlcv_data,
+        start_time=start_time,
+        end_time=end_time,
+        freq=freq,
+        file_format="csv"
+    )
+
+    print("开始处理数据...")
+    print(f"处理的交易对数量: {len(symbols)}")
+    # 使用多进程并行处理
+    with ProcessPoolExecutor(max_workers=1) as executor:
+        print("开始处理数据...")
+        executor.map(process_func, symbols)
