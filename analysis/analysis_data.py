@@ -4,7 +4,7 @@ import re
 from datetime import datetime
 import pyarrow.feather as feather
 from functools import partial
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 def read_feather_data(symbol: str, start_time: str, end_time: str, base_dir: str = "./okx_feather_data"):
     """
@@ -84,7 +84,7 @@ def check_missing_minutes(ohlcv_df, freq='1min'):
     return missing_minutes
 
 
-def merge_ohlcv_data(start_time, end_time, symbol, freq='1min', file_format='feather'):
+def merge_ohlcv_data(symbol, start_time, end_time, freq='1min', file_format='feather'):
     """
     合并多个OHLCV数据
     
@@ -98,7 +98,8 @@ def merge_ohlcv_data(start_time, end_time, symbol, freq='1min', file_format='fea
     ohlcvs = pd.DataFrame()
     ohlc_path = f"{freq}_{start_time}_{end_time}"
     os.makedirs(ohlc_path, exist_ok=True)
-    file_path = f"{ohlc_path}/{symbol}_{freq}_{start_time}_{end_time}.{file_format}"
+    # file_path = f"{ohlc_path}/{symbol}_{freq}_{start_time}_{end_time}.{file_format}"
+    file_path = f"{ohlc_path}/{symbol}.{file_format}"
 
     if os.path.exists(file_path):
         print(f"文件已存在: {file_path}")
@@ -178,6 +179,7 @@ if __name__ == "__main__":
         # 构造参数
     symbols = os.listdir("./okx_feather_data")
 
+    print(symbols)
     # 使用 partial 固定除 symbol 之外的参数
     process_func = partial(
         merge_ohlcv_data,
@@ -189,7 +191,12 @@ if __name__ == "__main__":
 
     print("开始处理数据...")
     print(f"处理的交易对数量: {len(symbols)}")
-    # 使用多进程并行处理
-    with ProcessPoolExecutor(max_workers=1) as executor:
-        print("开始处理数据...")
-        executor.map(process_func, symbols)
+    print("开始处理数据...")
+    with ProcessPoolExecutor(max_workers=32) as executor:
+        futures = [executor.submit(process_func, symbol) for symbol in symbols]
+        for future in as_completed(futures):
+            try:
+                result = future.result()
+                print("成功处理:", result)
+            except Exception as e:
+                print("发生异常:", e)
