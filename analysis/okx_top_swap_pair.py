@@ -69,4 +69,4 @@ with pd.ExcelWriter('okx_market_data.xlsx') as writer:
     top_30_df.to_excel(writer, sheet_name='前 30 永续合约', index=False)
 
 print("数据已保存到 okx_market_data.xlsx 文件中。")
-    
+print(sorted_markets[:30])
