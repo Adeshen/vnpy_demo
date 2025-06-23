@@ -3,13 +3,8 @@ import pandas as pd
 import re
 from datetime import datetime
 import pyarrow.feather as feather
-from concurrent.futures import ProcessPoolExecutor
-from tqdm import tqdm
-import logging
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
-
+from functools import partial
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 def read_feather_data(symbol: str, start_time: str, end_time: str, base_dir: str = "./okx_feather_data"):
     """
@@ -84,7 +79,7 @@ def check_missing_minutes(ohlcv_df, freq='1min'):
     return missing_minutes
 
 
-def merge_ohlcv_data(symbol, start_time, end_time, freq='1min'):
+def merge_ohlcv_data(symbol, start_time, end_time, freq='1min', file_format='feather'):
     """
     合并多个OHLCV数据
 
@@ -101,8 +96,8 @@ def merge_ohlcv_data(symbol, start_time, end_time, freq='1min'):
     ohlcvs = pd.DataFrame()
     ohlc_path = f"{freq}_{start_time}_{end_time}"
     os.makedirs(ohlc_path, exist_ok=True)
-    # file_path = f"{ohlc_path}/{symbol}_{freq}_{start_time}_{end_time}.feather"
-    file_path = f"{ohlc_path}/{symbol}_{freq}_{start_time}_{end_time}.csv"
+    # file_path = f"{ohlc_path}/{symbol}_{freq}_{start_time}_{end_time}.{file_format}"
+    file_path = f"{ohlc_path}/{symbol}.{file_format}"
 
     if os.path.exists(file_path):
         logger.info(f"文件已存在: {file_path}")
@@ -133,12 +128,16 @@ def merge_ohlcv_data(symbol, start_time, end_time, freq='1min'):
     except Exception as e:
         logger.error(f"读取失败: {str(e)}")
 
-    logger.info(f"总共读取到 {count} 条记录")
-    ohlcvs['symbol'] = symbol
-    # feather.write_feather(ohlcvs, file_path)
-    ohlcvs.to_csv(file_path)
-    logger.info(f"保存到 {file_path} ")
+    if file_format == "feather":
+        feather.write_feather(ohlcvs, file_path)
+    else:
+        ohlcvs.to_csv(file_path)
+    
+    print(f"保存到 {file_path} ")
 
+    # ohlcvs = feather.read_feather(file_path)
+
+    # ohlcvs.drop([ohlcvs.index[2],ohlcvs.index[1000]], inplace=True)
     missing_minutes = check_missing_minutes(ohlcvs)
 
     logger.info("缺失的分钟:", missing_minutes)
@@ -161,8 +160,38 @@ if __name__ == "__main__":
 
     symbols = os.listdir("./okx_feather_data")
 
-    with ProcessPoolExecutor() as executor:
-        results = list(tqdm(executor.map(process_symbol, symbols, [start_time] * len(symbols),
-                                         [end_time] * len(symbols), [freq] * len(symbols)), total=len(symbols)))
+    # print(feather.read_feather(r"F:\quant\vnpy_demo\okx_feather_data\INCH-USDT\INCH-USDT-trades-2024-12-01.feather"))
+    # for symbol in os.listdir("./okx_feather_data"):
 
-    
+    #     ohlc = merge_ohlcv_data(
+    #         start_time=start_time,
+    #         end_time=end_time,
+    #         symbol=symbol,
+    #         freq=freq,
+    #         file_format="csv"
+    #     )
+
+        # 构造参数
+    symbols = os.listdir("./okx_feather_data")
+
+    print(symbols)
+    # 使用 partial 固定除 symbol 之外的参数
+    process_func = partial(
+        merge_ohlcv_data,
+        start_time=start_time,
+        end_time=end_time,
+        freq=freq,
+        file_format="csv"
+    )
+
+    print("开始处理数据...")
+    print(f"处理的交易对数量: {len(symbols)}")
+    print("开始处理数据...")
+    with ProcessPoolExecutor(max_workers=32) as executor:
+        futures = [executor.submit(process_func, symbol) for symbol in symbols]
+        for future in as_completed(futures):
+            try:
+                result = future.result()
+                print("成功处理:", result)
+            except Exception as e:
+                print("发生异常:", e)
